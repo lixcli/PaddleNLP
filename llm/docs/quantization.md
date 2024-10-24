@@ -128,7 +128,7 @@ python  run_finetune.py ./config/llama/fp8_ptq_argument.json
 - `search_scale_min`: 分段搜索时 scale 最小值，默认为1.0。
 - `search_scale_max`: 分段搜索时 scale 最大值，默认为5.0。
 - `load_quant_model`: 是否加载量化模型，默认为 False。用于验证量化后的模型效果， 若设为 True，则从 output_dir 中加载权重。启动该过程需要设`do_ptq`为 False。如果量化时使用了 smooth 或 shift，加载时需要保持相同的配置（shift_step/search_step 可设为8）。注意，当前该函数只支持 pdparams 格式加载，若要使用该功能，设置`"unified_checkpoint": false`。
-- `skip_list_names`: 需要量化跳过的层名称列表，默认为空列表。可以使用层名的部分字符串作为匹配，如['down_proj']表示跳过所有 ffn2层。
+- `skip_name_list`: 需要量化跳过的层名称列表，默认为空列表。可以使用层名的部分字符串作为匹配，如['down_proj']表示跳过所有 ffn2层。
 - `do_gptq`: 是否进行 GPTQ 量化，GPTQ 对模型进行 WINT4量化，相比于普通 PTQ 量化精度更高，量化时间较长。默认为 False。
 - `gptq_step`: GPTQ 量化步数，也即模型前向次数，默认为8。
 - `do_awq`: 是否进行 AWQ 量化，AWQ 对模型进行 WINT4量化，相比于普通 PTQ 量化精度更高。默认为 False。

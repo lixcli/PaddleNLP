@@ -15,12 +15,6 @@ import json
 import os
 
 import paddle
-from experimental.layers.custom_attention import QuantizedCustomAttentionLayer
-from experimental.observer.abs_max import AbsmaxObserver
-from experimental.observer.abs_max_headwise import AbsMaxHeadwiseObserver
-from experimental.observer.avg import AVGObserver
-from experimental.observer.avg_headwise import AvgHeadwiseObserver
-from experimental.observer.channel_wise import ChannelWiseObserver
 from paddle import nn
 from paddle.distributed.fleet.meta_parallel import (
     ColumnParallelLinear,
@@ -44,10 +38,16 @@ from paddleslim.quant.layers import (
     QuantizedColumnParallelLinear,
     QuantizedRowParallelLinear,
 )
+from paddleslim.quant.layers.custom_attention import QuantizedCustomAttentionLayer
 from paddleslim.quant.observers import (
     AbsMaxChannelWiseWeightObserver,
     GroupWiseWeightObserver,
 )
+from paddleslim.quant.observers.abs_max import AbsmaxObserver
+from paddleslim.quant.observers.abs_max_headwise import AbsMaxHeadwiseObserver
+from paddleslim.quant.observers.avg import AVGObserver
+from paddleslim.quant.observers.avg_headwise import AvgHeadwiseObserver
+from paddleslim.quant.observers.channel_wise import ChannelWiseObserver
 
 from paddlenlp.peft import PrefixModelForCausalLM
 from paddlenlp.peft.lora import (
@@ -304,10 +304,10 @@ def load_quant_model(model, quant_args, load_quant_path, dtype="float32"):
     if cachekv is not None:
         set_wrapper_for_attn(model)
 
-    skip_list_names = [] if quant_args.skip_list_names is None else quant_args.skip_list_names
+    skip_name_list = [] if quant_args.skip_name_list is None else quant_args.skip_name_list
     for cur_name, cur_layer in model.named_sublayers():
         skip = False
-        for k in skip_list_names:
+        for k in skip_name_list:
             if k in cur_name:
                 logger.info(f"Skip layer {cur_name}")
                 skip = True
@@ -396,11 +396,11 @@ def apply_ptq(quant_args, trainer, ptq_dataloader):
     if cachekv is not None:
         set_wrapper_for_attn(trainer.model)
 
-    skip_list_names = [] if quant_args.skip_list_names is None else quant_args.skip_list_names
+    skip_name_list = [] if quant_args.skip_name_list is None else quant_args.skip_name_list
 
     for cur_name, cur_layer in trainer.model.named_sublayers():
         skip = False
-        for k in skip_list_names:
+        for k in skip_name_list:
             if k in cur_name:
                 logger.info(f"Skip layer {cur_name}")
                 skip = True
@@ -419,16 +419,12 @@ def apply_ptq(quant_args, trainer, ptq_dataloader):
     ptq = PTQ(q_config)
     trainer.model = ptq.quantize(trainer.model, inplace=True)
 
-    # enable observer
-    enable_observer(trainer.model)
     logger.info("***** PTQ loop start *****")
     trainer.ptq_loop(
         ptq_dataloader,
         description="PTQ",
         max_eval_iters=quant_args.ptq_step,
     )
-    # disable observer
-    disable_observer(trainer.model)
 
     weight_scales = {}
     act_scales = {}
@@ -515,20 +511,6 @@ def get_ptq_model_config(model):
             f"Unknown base_model_prefix: {model.base_model_prefix}. Supported base_model_prefix list: chatglm_V2, bloom, llama, qwen2."
         )
     return model_config
-
-
-def enable_observer(model: nn.Layer):
-    # TODO maybe not support pp,tp etc.
-    for mod in model.sublayers():
-        if hasattr(mod, "observer_enabled"):
-            mod.observer_enabled = True
-
-
-def disable_observer(model: nn.Layer):
-    # TODO maybe not support pp,tp etc.
-    for mod in model.sublayers():
-        if hasattr(mod, "observer_enabled"):
-            mod.observer_enabled = False
 
 
 def add_quant_inp_out_hook(model: nn.Layer, tag_func):

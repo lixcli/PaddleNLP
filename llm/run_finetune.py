@@ -109,6 +109,7 @@ def main():
     if get_env_device() == "xpu" and training_args.gradient_accumulation_steps > 1:
         try:
             from paddle_xpu.layers.nn.linear import LinearConfig  # noqa: F401
+
             LinearConfig.enable_accumulate_steps_opt()
             LinearConfig.set_accumulate_steps(training_args.gradient_accumulation_steps)
         except ImportError:
@@ -654,7 +655,7 @@ def main():
             apply_autoclip(quant_args, trainer, ptq_dataloader)
 
         apply_ptq(quant_args, trainer, ptq_dataloader)
-        trainer.save_model(merge_tensor_parallel=training_args.tensor_parallel_degree > 1)
+        # trainer.save_model(merge_tensor_parallel=training_args.tensor_parallel_degree > 1)
 
     if quant_args.do_gptq:
         if isinstance(model, LoRAModel):

@@ -1,6 +1,6 @@
 {
   "model_name_or_path": "Qwen/Qwen2-7B-Instruct",
-  "quant_type": "a8w8",
+  "quant_type": "a8w8c8",
   "per_device_train_batch_size": 8,
   "per_device_eval_batch_size": 8,
   "eval_accumulation_steps":16,
@@ -8,8 +8,8 @@
   "max_length": 2048,
   "fp16": true,
   "fp16_opt_level": "O2",
-  "dataset_name_or_path": "../dataset/AdvertiseGen",
-  "output_dir": "../output/qwen2/w8a8_ptq_ckpts_AdvertiseGen",
+  "dataset_name_or_path": "./data",
+  "output_dir": "./checkpoints/qwen_ptq_c8_ckpts",
   "do_eval": true,
   "eval_with_do_generation": false,
   "do_ptq": true,
@@ -22,5 +22,6 @@
   "smooth_k_piece": 3,
   "smooth_search_piece": true,
   "act_quant_method": "abs_max",
-  "skip_list_names": ["down_proj"]
+  "cachekv_quant_method": "abs_max_headwise",
+  "skip_name_list": ["down_proj"]
 }
