@@ -34,7 +34,7 @@ from paddlenlp.datasets import (
 )
 from paddlenlp.metrics import BLEU, Rouge1, Rouge2, RougeL
 from paddlenlp.peft import LoRAModel
-from paddlenlp.trainer import PdArgumentParser, get_last_checkpoint
+from paddlenlp.trainer import PdArgumentParser
 from paddlenlp.trainer.trainer_callback import TrainerState
 from paddlenlp.transformers import (
     AutoConfig,
@@ -79,7 +79,7 @@ def main():
 
     if sum([quant_args.do_ptq, quant_args.do_qat, quant_args.do_gptq]) > 1:
         raise ValueError(
-            "--do_train, --do_ptq, --do_gptq and --do_qat cannot work at the same time. Please choose only one at a time"
+            "--do_ptq, --do_gptq and --do_qat cannot work at the same time. Please choose only one at a time"
         )
 
     # Setup GPU & distributed training
@@ -88,16 +88,6 @@ def main():
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, world_size: {training_args.world_size}, "
         + f"distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16 or training_args.bf16}"
     )
-
-    # Detecting last checkpoint.
-    last_checkpoint = None
-    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
-        last_checkpoint = get_last_checkpoint(training_args.output_dir)
-        if last_checkpoint is not None and training_args.resume_from_checkpoint is None:
-            logger.info(
-                f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
-                "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
-            )
 
     if get_env_device() == "xpu" and training_args.gradient_accumulation_steps > 1:
         try:
